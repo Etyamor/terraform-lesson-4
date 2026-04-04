@@ -49,7 +49,7 @@ Terraform створить:
 ## 2. Налаштування kubectl
 
 ```bash
-aws eks update-kubeconfig --name eks-cluster-demo --region us-west-2
+aws eks update-kubeconfig --name eks-cluster-demo --region eu-central-1
 ```
 
 Перевірка підключення:
@@ -63,15 +63,15 @@ kubectl get nodes
 Авторизація в ECR:
 
 ```bash
-aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin <AWS_ACCOUNT_ID>.dkr.ecr.us-west-2.amazonaws.com
+aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin <AWS_ACCOUNT_ID>.dkr.ecr.eu-central-1.amazonaws.com
 ```
 
 Збірка та завантаження образу:
 
 ```bash
 docker build -t django-app .
-docker tag django-app:latest <AWS_ACCOUNT_ID>.dkr.ecr.us-west-2.amazonaws.com/django-app:latest
-docker push <AWS_ACCOUNT_ID>.dkr.ecr.us-west-2.amazonaws.com/django-app:latest
+docker tag django-app:latest <AWS_ACCOUNT_ID>.dkr.ecr.eu-central-1.amazonaws.com/django-app:latest
+docker push <AWS_ACCOUNT_ID>.dkr.ecr.eu-central-1.amazonaws.com/django-app:latest
 ```
 
 ## 4. Деплой застосунку через Helm
