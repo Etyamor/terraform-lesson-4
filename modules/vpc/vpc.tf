@@ -18,9 +18,9 @@ resource "aws_subnet" "public" {
   map_public_ip_on_launch = true                                # Автоматично надає публічні IP-адреси інстансам у підмережі
 
   tags = {
-    Name = "${var.vpc_name}-public-subnet-${count.index + 1}" # Тег з нумерацією підмережі
-    # count.index — це індекс циклу "count", який починається з 0.
-    # ${count.index + 1} додає +1 до індексу, щоб отримати людське позначення (1, 2, 3 замість 0, 1, 2).
+    Name                                        = "${var.vpc_name}-public-subnet-${count.index + 1}" # Тег з нумерацією підмережі
+    "kubernetes.io/role/elb"                    = "1"                                                # Тег для EKS — дозволяє створювати зовнішні Load Balancer
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"                                           # Тег для EKS — підмережа належить кластеру
   }
 }
 
@@ -32,8 +32,9 @@ resource "aws_subnet" "private" {
   availability_zone = var.availability_zones[count.index] # Визначаємо зони доступності для підмереж
 
   tags = {
-    Name = "${var.vpc_name}-private-subnet-${count.index + 1}" # Тег для підмережі з нумерацією
-    # ${count.index + 1} використовується, щоб нумерація підмереж починалася з 1.
+    Name                                        = "${var.vpc_name}-private-subnet-${count.index + 1}" # Тег для підмережі з нумерацією
+    "kubernetes.io/role/internal-elb"           = "1"                                                 # Тег для EKS — дозволяє створювати внутрішні Load Balancer
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"                                            # Тег для EKS — підмережа належить кластеру
   }
 }
 
