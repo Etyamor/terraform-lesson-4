@@ -1,0 +1,42 @@
+# Налаштування образу
+image:
+  repository: <AWS_ACCOUNT_ID>.dkr.ecr.us-west-2.amazonaws.com/django-app
+  tag: latest
+  pullPolicy: Always
+
+# Кількість реплік
+replicaCount: 2
+
+# Налаштування контейнера
+container:
+  port: 8000
+
+# Налаштування сервісу
+service:
+  type: LoadBalancer
+  port: 80
+  targetPort: 8000
+
+# Налаштування автоскейлінгу (HPA)
+autoscaling:
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+
+# Ресурси для контейнера
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+# Змінні середовища для Django (ConfigMap)
+config:
+  DEBUG: "False"
+  ALLOWED_HOSTS: "*"
+  DATABASE_ENGINE: "django.db.backends.sqlite3"
+  DATABASE_NAME: "/app/db.sqlite3"
+  DJANGO_SETTINGS_MODULE: "app.settings"
+  PYTHONUNBUFFERED: "1"
