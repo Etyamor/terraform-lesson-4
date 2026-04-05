@@ -9,7 +9,7 @@ output "dynamodb_table_name" {
 }
 
 output "eks_cluster_endpoint" {
-  description = "EKS API endpoint for connecting to the cluster"
+  description = "EKS API endpoint"
   value       = module.eks.eks_cluster_endpoint
 }
 
@@ -21,4 +21,14 @@ output "eks_cluster_name" {
 output "eks_node_role_arn" {
   description = "IAM role ARN for EKS Worker Nodes"
   value       = module.eks.eks_node_role_arn
+}
+
+output "jenkins_namespace" {
+  description = "Jenkins namespace"
+  value       = module.jenkins.jenkins_namespace
+}
+
+output "argocd_namespace" {
+  description = "Argo CD namespace"
+  value       = module.argo_cd.argocd_namespace
 }

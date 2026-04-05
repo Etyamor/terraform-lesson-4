@@ -88,9 +88,9 @@ resource "aws_iam_role_policy_attachment" "amazon_eks_cni_policy" {
   role       = aws_iam_role.nodes.name
 }
 
-# Прив'язка політики для читання з Amazon ECR
-resource "aws_iam_role_policy_attachment" "amazon_ec2_container_registry_read_only" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+# Прив'язка політики для роботи з Amazon ECR (push/pull образів)
+resource "aws_iam_role_policy_attachment" "amazon_ec2_container_registry_power_user" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser"
   role       = aws_iam_role.nodes.name
 }
 
@@ -133,7 +133,7 @@ resource "aws_eks_node_group" "general" {
   depends_on = [
     aws_iam_role_policy_attachment.amazon_eks_worker_node_policy,
     aws_iam_role_policy_attachment.amazon_eks_cni_policy,
-    aws_iam_role_policy_attachment.amazon_ec2_container_registry_read_only,
+    aws_iam_role_policy_attachment.amazon_ec2_container_registry_power_user,
   ]
 
   # Ігнорує зміни в desired_size, щоб уникнути конфліктів

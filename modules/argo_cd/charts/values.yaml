@@ -1,0 +1,5 @@
+application:
+  repoURL: ""
+  targetRevision: "main"
+  path: "charts/django-app"
+  namespace: "default"
