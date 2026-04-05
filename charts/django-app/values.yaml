@@ -1,6 +1,6 @@
 # Налаштування образу
 image:
-  repository: 651617808906.dkr.ecr.eu-central-1.amazonaws.com/django-app
+  repository: <AWS_ACCOUNT_ID>.dkr.ecr.eu-central-1.amazonaws.com/django-app
   tag: latest
   pullPolicy: Always
 
@@ -20,7 +20,7 @@ service:
 # Налаштування автоскейлінгу (HPA)
 autoscaling:
   minReplicas: 1
-  maxReplicas: 6
+  maxReplicas: 2
   targetCPUUtilizationPercentage: 70
 
 # Ресурси для контейнера

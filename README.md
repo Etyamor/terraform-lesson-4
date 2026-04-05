@@ -76,10 +76,12 @@ docker push <AWS_ACCOUNT_ID>.dkr.ecr.eu-central-1.amazonaws.com/django-app:lates
 
 ## 4. Деплой застосунку через Helm
 
-Перед встановленням відредагуйте `charts/django-app/values.yaml` — замініть `<AWS_ACCOUNT_ID>` на реальний ID акаунту.
+Передайте свій AWS Account ID через `--set`:
 
 ```bash
-helm install django-app ./charts/django-app
+export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+helm install django-app ./charts/django-app \
+  --set image.repository=${AWS_ACCOUNT_ID}.dkr.ecr.eu-central-1.amazonaws.com/django-app
 ```
 
 Перевірка статусу:
