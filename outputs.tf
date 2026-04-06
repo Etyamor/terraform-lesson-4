@@ -23,6 +23,16 @@ output "eks_node_role_arn" {
   value       = module.eks.eks_node_role_arn
 }
 
+output "rds_endpoint" {
+  description = "RDS/Aurora database endpoint"
+  value       = module.rds.endpoint
+}
+
+output "rds_port" {
+  description = "RDS/Aurora database port"
+  value       = module.rds.port
+}
+
 output "jenkins_namespace" {
   description = "Jenkins namespace"
   value       = module.jenkins.jenkins_namespace

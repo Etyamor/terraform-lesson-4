@@ -35,6 +35,31 @@ module "eks" {
   min_size        = 1                                                             # Мінімальна кількість нодів
 }
 
+# Підключаємо модуль RDS
+module "rds" {
+  source = "./modules/rds"
+
+  identifier     = "app-database"
+  use_aurora     = false
+  engine         = "postgres"
+  engine_version = "16.4"
+  instance_class = "db.t3.micro"
+
+  db_name     = "appdb"
+  db_username = "dbadmin"
+  db_password = "ChangeMe123!"
+
+  vpc_id     = module.vpc.vpc_id
+  subnet_ids = module.vpc.private_subnets
+
+  allowed_cidr_blocks = ["10.0.0.0/16"]
+
+  tags = {
+    Environment = "dev"
+    Project     = "terraform-lesson"
+  }
+}
+
 # Підключаємо модуль Jenkins
 module "jenkins" {
   source = "./modules/jenkins"

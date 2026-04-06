@@ -1,173 +1,158 @@
-# Lesson 8-9 — CI/CD: Jenkins + ArgoCD + Helm + Terraform
+# Terraform RDS Module
 
-Повний CI/CD pipeline для Django-застосунку на AWS EKS: Jenkins збирає образ та пушить у ECR, ArgoCD автоматично синхронізує зміни з Git у кластер.
+Universal Terraform module that creates either a regular RDS instance or an Aurora cluster, controlled by a single `use_aurora` flag.
 
-## CI/CD схема
-
-```
-Developer -> Git Push -> Jenkins Pipeline -> Build (Kaniko) -> Push to ECR
-                                          -> Update values.yaml -> Git Push
-                                                                -> ArgoCD Sync -> EKS Cluster
-```
-
-## Структура проєкту
+## Project Structure
 
 ```
-├── main.tf                     # Головний файл модулів
-├── providers.tf                # AWS, Kubernetes, Helm провайдери
-├── backend.tf                  # S3 + DynamoDB бекенд
-├── outputs.tf                  # Виводи ресурсів
-├── Jenkinsfile                 # CI/CD pipeline
-├── modules/
-│   ├── s3-backend/             # S3 + DynamoDB для Terraform state
-│   ├── vpc/                    # VPC (підмережі, NAT Gateway, маршрути)
-│   ├── ecr/                    # ECR (реєстр Docker-образів)
-│   ├── eks/                    # EKS (кластер + Node Group + EBS CSI Driver)
-│   │   ├── eks.tf
-│   │   ├── aws_ebs_csi_driver.tf
-│   │   ├── variables.tf
-│   │   └── outputs.tf
-│   ├── jenkins/                # Jenkins через Helm
-│   │   ├── jenkins.tf
-│   │   ├── providers.tf
-│   │   ├── variables.tf
-│   │   ├── values.yaml
-│   │   └── outputs.tf
-│   └── argo_cd/                # Argo CD через Helm
-│       ├── argocd.tf
-│       ├── providers.tf
-│       ├── variables.tf
-│       ├── values.yaml
-│       ├── outputs.tf
-│       └── charts/             # App-of-apps chart
-│           ├── Chart.yaml
-│           ├── values.yaml
-│           └── templates/
-│               ├── application.yaml
-│               └── repository.yaml
-├── charts/
-│   └── django-app/             # Helm chart Django-застосунку
-└── django-app/                 # Django-проєкт + Dockerfile
+modules/rds/
+  rds.tf          # Regular RDS instance (use_aurora = false)
+  aurora.tf       # Aurora cluster + instances (use_aurora = true)
+  shared.tf       # DB Subnet Group, Security Group, Parameter Groups
+  variables.tf    # Input variables with types, descriptions, defaults
+  outputs.tf      # Module outputs
 ```
 
-## Передумови
+## Usage
 
-- AWS CLI (`aws configure`)
-- Terraform >= 1.0
-- kubectl
-- Helm >= 3.0
-- Docker
+### Regular RDS (PostgreSQL)
 
-## 1. Розгортання інфраструктури
+```hcl
+module "rds" {
+  source = "./modules/rds"
 
-Закоментуйте backend блок у `backend.tf`, потім:
+  identifier     = "app-database"
+  use_aurora     = false
+  engine         = "postgres"
+  engine_version = "16.4"
+  instance_class = "db.t3.micro"
+
+  db_name     = "appdb"
+  db_username = "dbadmin"
+  db_password = var.db_password
+
+  vpc_id     = module.vpc.vpc_id
+  subnet_ids = module.vpc.private_subnets
+
+  allowed_cidr_blocks = ["10.0.0.0/16"]
+}
+```
+
+### Aurora Cluster (PostgreSQL)
+
+```hcl
+module "rds" {
+  source = "./modules/rds"
+
+  identifier     = "app-database"
+  use_aurora     = true
+  engine         = "postgres"
+  engine_version = "16.4"
+  instance_class = "db.r6g.large"
+
+  aurora_instance_count = 2
+
+  db_name     = "appdb"
+  db_username = "dbadmin"
+  db_password = var.db_password
+
+  vpc_id     = module.vpc.vpc_id
+  subnet_ids = module.vpc.private_subnets
+
+  allowed_cidr_blocks = ["10.0.0.0/16"]
+}
+```
+
+### MySQL Example
+
+```hcl
+module "rds" {
+  source = "./modules/rds"
+
+  identifier     = "mysql-database"
+  use_aurora     = false
+  engine         = "mysql"
+  engine_version = "8.0"
+  instance_class = "db.t3.micro"
+
+  db_name     = "appdb"
+  db_username = "dbadmin"
+  db_password = var.db_password
+
+  vpc_id     = module.vpc.vpc_id
+  subnet_ids = module.vpc.private_subnets
+}
+```
+
+## Variables
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `use_aurora` | `bool` | `false` | Use Aurora cluster instead of regular RDS instance |
+| `engine` | `string` | `"postgres"` | Database engine: `postgres` or `mysql` |
+| `engine_version` | `string` | `"16.4"` | Engine version (e.g. `16.4` for PostgreSQL, `8.0` for MySQL) |
+| `instance_class` | `string` | `"db.t3.micro"` | Instance class (e.g. `db.t3.micro`, `db.r6g.large` for Aurora) |
+| `allocated_storage` | `number` | `20` | Storage in GB (regular RDS only, ignored for Aurora) |
+| `db_name` | `string` | `"appdb"` | Database name to create |
+| `db_username` | `string` | `"dbadmin"` | Master username |
+| `db_password` | `string` | - | Master password (sensitive, required) |
+| `multi_az` | `bool` | `false` | Multi-AZ deployment (regular RDS only) |
+| `vpc_id` | `string` | - | VPC ID (required) |
+| `subnet_ids` | `list(string)` | - | Subnet IDs for DB subnet group (required) |
+| `allowed_cidr_blocks` | `list(string)` | `["10.0.0.0/16"]` | CIDR blocks allowed to access DB |
+| `identifier` | `string` | `"app-database"` | Resource identifier/name |
+| `aurora_instance_count` | `number` | `1` | Number of Aurora instances (writer + readers) |
+| `backup_retention_period` | `number` | `7` | Backup retention in days |
+| `skip_final_snapshot` | `bool` | `true` | Skip final snapshot on destroy |
+| `tags` | `map(string)` | `{}` | Additional tags |
+
+## Outputs
+
+| Output | Description |
+|--------|-------------|
+| `endpoint` | Database connection endpoint |
+| `reader_endpoint` | Aurora reader endpoint (null for regular RDS) |
+| `port` | Database port |
+| `db_name` | Database name |
+| `security_group_id` | Security group ID |
+| `subnet_group_name` | DB subnet group name |
+
+## How to change database type
+
+**Switch from RDS to Aurora:**
+Set `use_aurora = true` and adjust `instance_class` to an Aurora-compatible class (e.g. `db.r6g.large`).
+
+**Change engine from PostgreSQL to MySQL:**
+Set `engine = "mysql"` and `engine_version = "8.0"`.
+
+**Change instance class:**
+Set `instance_class` to desired value (e.g. `db.t3.medium`, `db.r6g.xlarge`).
+
+**Enable Multi-AZ for regular RDS:**
+Set `multi_az = true` (not applicable for Aurora, which handles HA at the cluster level).
+
+**Scale Aurora readers:**
+Increase `aurora_instance_count` (first instance is always the writer).
+
+## Parameter Groups
+
+The module automatically creates parameter groups with the following PostgreSQL parameters:
+- `max_connections = 100`
+- `log_statement = all`
+- `work_mem = 4096` (KB)
+
+For MySQL, only `max_connections` is set (other parameters are PostgreSQL-specific).
+
+The parameter group family is computed automatically based on `engine` and `engine_version`.
+
+## Deploying
 
 ```bash
 terraform init
-terraform apply -target=module.s3_backend
-```
-
-Розкоментуйте backend блок, мігруйте стейт:
-
-```bash
-terraform init -migrate-state
-```
-
-Розгорніть всю інфраструктуру:
-
-```bash
 terraform apply
 ```
 
-Terraform створить: VPC, EKS кластер (2x t3.small), ECR, EBS CSI Driver, Jenkins, Argo CD.
-
-## 2. Налаштування kubectl
-
-```bash
-aws eks update-kubeconfig --name eks-cluster-demo --region eu-central-1
-kubectl get nodes
-```
-
-## 3. Доступ до Jenkins
-
-Отримайте URL Jenkins:
-
-```bash
-kubectl get svc -n jenkins jenkins -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
-```
-
-Логін: `admin`, пароль: `admin` (або значення зі змінної `admin_password`).
-
-### Налаштування Jenkins credentials
-
-В Jenkins UI (Manage Jenkins -> Credentials) додайте:
-
-1. **aws-account-id** (Secret text) — ваш AWS Account ID
-2. **github-token** (Username with password) — GitHub username + Personal Access Token
-
-### Створення Jenkins Job
-
-1. New Item -> Pipeline
-2. Pipeline Definition: Pipeline script from SCM
-3. SCM: Git, URL: `https://github.com/Etyamor/terraform-lesson-4.git`
-4. Branch: `*/main`
-5. Script Path: `Jenkinsfile`
-
-### Запуск та перевірка
-
-```bash
-# Запустіть Build в Jenkins UI або через CLI
-# Pipeline збере образ, запушить в ECR та оновить values.yaml
-```
-
-## 4. Доступ до Argo CD
-
-Отримайте URL Argo CD:
-
-```bash
-kubectl get svc -n argocd argocd-server -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
-```
-
-Отримайте початковий пароль:
-
-```bash
-kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d
-```
-
-Логін: `admin`.
-
-### Перевірка синхронізації
-
-В Argo CD UI перевірте Application `django-app`:
-- Status: Synced
-- Health: Healthy
-
-Або через CLI:
-
-```bash
-kubectl get applications -n argocd
-```
-
-## 5. Як працює CI/CD
-
-1. **Jenkins Pipeline** запускається (вручну або по webhook)
-2. **Kaniko** збирає Docker-образ з `django-app/Dockerfile`
-3. Образ пушиться в **ECR** з тегом = номер білду
-4. Pipeline оновлює `tag` у `charts/django-app/values.yaml` і пушить в Git
-5. **Argo CD** виявляє зміну в Git і автоматично синхронізує кластер
-
-## Модулі Terraform
-
-| Модуль | Опис |
-|--------|------|
-| **s3-backend** | S3 + DynamoDB для Terraform state |
-| **vpc** | VPC з 3 публічними та 3 приватними підмережами, NAT Gateway |
-| **ecr** | ECR-репозиторій `django-app` |
-| **eks** | EKS-кластер з Node Group + EBS CSI Driver (для Jenkins PV) |
-| **jenkins** | Jenkins через Helm з Kubernetes agent (Kaniko + Git) |
-| **argo_cd** | Argo CD через Helm + Application для django-app |
-
-## Очистка ресурсів
+## Cleanup
 
 ```bash
 terraform destroy
