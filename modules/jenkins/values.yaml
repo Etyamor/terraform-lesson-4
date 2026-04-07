@@ -1,5 +1,6 @@
 controller:
-  adminPassword: "${admin_password}"
+  admin:
+    password: "${admin_password}"
   serviceType: LoadBalancer
   resources:
     requests:
@@ -9,11 +10,11 @@ controller:
       cpu: "1000m"
       memory: "1Gi"
   installPlugins:
-    - kubernetes:4336.v8b_97f0484a_c0
-    - workflow-aggregator:600.vb_57cdd26fdd7
-    - git:5.7.0
-    - configuration-as-code:1932.v75cb_b_f1b_698d
-    - pipeline-stage-view:2.34
+    - kubernetes:latest
+    - workflow-aggregator:latest
+    - git:latest
+    - configuration-as-code:latest
+    - pipeline-stage-view:latest
   JCasC:
     configScripts:
       welcome-message: |
@@ -32,4 +33,5 @@ agent:
 
 persistence:
   enabled: true
+  storageClass: gp2
   size: "8Gi"

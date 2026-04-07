@@ -7,7 +7,7 @@ variable "namespace" {
 variable "chart_version" {
   description = "Версія Helm chart для Jenkins"
   type        = string
-  default     = "5.8.3"
+  default     = "5.9.12"
 }
 
 variable "admin_password" {

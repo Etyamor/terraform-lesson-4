@@ -1,6 +1,6 @@
 output "jenkins_namespace" {
   description = "Namespace де встановлений Jenkins"
-  value       = kubernetes_namespace.jenkins.metadata[0].name
+  value       = kubernetes_namespace_v1.jenkins.metadata[0].name
 }
 
 output "jenkins_admin_password" {

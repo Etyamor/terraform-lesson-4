@@ -30,7 +30,7 @@ module "eks" {
   subnet_ids      = concat(module.vpc.public_subnets, module.vpc.private_subnets) # Підмережі для контрольної площини
   node_subnet_ids = module.vpc.private_subnets                                    # Worker nodes — в приватних підмережах
   instance_type   = "t3.small"                                                    # Тип інстансів (Jenkins+ArgoCD потребують більше ресурсів)
-  desired_size    = 2                                                             # Бажана кількість нодів
+  desired_size    = 3                                                             # Бажана кількість нодів
   max_size        = 3                                                             # Максимальна кількість нодів
   min_size        = 1                                                             # Мінімальна кількість нодів
 }
@@ -42,7 +42,7 @@ module "rds" {
   identifier     = "app-database"
   use_aurora     = false
   engine         = "postgres"
-  engine_version = "16.4"
+  engine_version = "16.6"
   instance_class = "db.t3.micro"
 
   db_name     = "appdb"
@@ -79,7 +79,7 @@ module "argo_cd" {
   source = "./modules/argo_cd"
 
   git_repo_url        = "https://github.com/Etyamor/terraform-lesson-4.git"
-  git_target_revision = "main"
+  git_target_revision = "final-project"
   app_chart_path      = "charts/django-app"
 
   depends_on = [module.eks]

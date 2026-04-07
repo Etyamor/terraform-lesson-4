@@ -1,5 +1,5 @@
 # Створюємо namespace для Jenkins
-resource "kubernetes_namespace" "jenkins" {
+resource "kubernetes_namespace_v1" "jenkins" {
   metadata {
     name = var.namespace
   }
@@ -11,7 +11,7 @@ resource "helm_release" "jenkins" {
   repository = "https://charts.jenkins.io"
   chart      = "jenkins"
   version    = var.chart_version
-  namespace  = kubernetes_namespace.jenkins.metadata[0].name
+  namespace  = kubernetes_namespace_v1.jenkins.metadata[0].name
 
   values = [
     templatefile("${path.module}/values.yaml", {
@@ -19,5 +19,6 @@ resource "helm_release" "jenkins" {
     })
   ]
 
-  timeout = 600
+  timeout = 900
+  wait    = false
 }

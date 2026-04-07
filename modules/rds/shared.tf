@@ -18,11 +18,11 @@ locals {
   is_postgres = var.engine == "postgres"
 
   db_parameters = local.is_postgres ? [
-    { name = "max_connections", value = "100" },
-    { name = "log_statement", value = "ddl" },
-    { name = "work_mem", value = "4096" },
+    { name = "max_connections", value = "100", apply_method = "pending-reboot" },
+    { name = "log_statement", value = "ddl", apply_method = "immediate" },
+    { name = "work_mem", value = "4096", apply_method = "immediate" },
   ] : [
-    { name = "max_connections", value = "100" },
+    { name = "max_connections", value = "100", apply_method = "pending-reboot" },
   ]
 }
 
@@ -74,8 +74,9 @@ resource "aws_db_parameter_group" "this" {
   dynamic "parameter" {
     for_each = local.db_parameters
     content {
-      name  = parameter.value.name
-      value = parameter.value.value
+      name         = parameter.value.name
+      value        = parameter.value.value
+      apply_method = parameter.value.apply_method
     }
   }
 
@@ -95,8 +96,9 @@ resource "aws_rds_cluster_parameter_group" "this" {
   dynamic "parameter" {
     for_each = local.db_parameters
     content {
-      name  = parameter.value.name
-      value = parameter.value.value
+      name         = parameter.value.name
+      value        = parameter.value.value
+      apply_method = parameter.value.apply_method
     }
   }
 
