@@ -67,6 +67,13 @@ module "jenkins" {
   depends_on = [module.eks]
 }
 
+# Підключаємо модуль моніторингу (Prometheus + Grafana)
+module "monitoring" {
+  source = "./modules/monitoring"
+
+  depends_on = [module.eks]
+}
+
 # Підключаємо модуль Argo CD
 module "argo_cd" {
   source = "./modules/argo_cd"
