@@ -19,7 +19,7 @@ locals {
 
   db_parameters = local.is_postgres ? [
     { name = "max_connections", value = "100" },
-    { name = "log_statement", value = "all" },
+    { name = "log_statement", value = "ddl" },
     { name = "work_mem", value = "4096" },
   ] : [
     { name = "max_connections", value = "100" },
